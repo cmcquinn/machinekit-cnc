@@ -7,22 +7,26 @@ LABEL maintainer="Cameron McQuinn <cameron.mcquinn@gmail.com>"
 # Machinekit:  Configure multistrap
 
 # Set up debian/control for `mk-build-deps`
+RUN rm -rf /tmp/debian
 ADD debian/ /tmp/debian/
-RUN MK_CROSS_BUILDER=1 /tmp/debian/configure
+RUN MK_CROSS_BUILDER=1 /tmp/debian/configure -r
 
 # Directory for `mk-build-deps` apt repository
-RUN mkdir /tmp/debs && \
+RUN rm -rf /tmp/debs && \
+    mkdir /tmp/debs && \
     touch /tmp/debs/Sources
 
 # Create deps package and local package repo
 ARG MK_HAL_REPO
+ADD ${MK_HAL_REPO} /tmp/mk-hal
 RUN if test $DISTRO_VER -eq 8; then \
         mk-build-deps --arch $DEBIAN_ARCH /tmp/debian/control; \
     else \
         mk-build-deps --build-arch $DEBIAN_ARCH --host-arch $DEBIAN_ARCH \
 	    /tmp/debian/control; \
     fi \
-    && cp ${MK_HAL_REPO}/* /tmp/debs \
+    && mv *.deb /tmp/debs \
+    && cp /tmp/mk-hal/* /tmp/debs \
     && ( cd /tmp/debs && dpkg-scanpackages -m . > /tmp/debs/Packages )
 
 # Add deps repo to apt sources for native builds
@@ -31,12 +35,9 @@ RUN if test $DISTRO_VER -le 9 -a $DEBIAN_ARCH = amd64; then \
 	&& apt-get update; \
     fi
 
-# Patch multistrap on Buster
-# https://github.com/volumio/Build/issues/348#issuecomment-462271607
-RUN if test $DISTRO_VER -ge 9; then \
-        sed -i /usr/sbin/multistrap \
-	    -e '/AllowUnauthenticated/ s/"$/ -o Acquire::AllowInsecureRepositories=true"/'; \
-    fi
+# Add multistrap configurations
+RUN rm -rf /tmp/multistrap-configs
+ADD scripts/buildsystem/debian/multistrap-configs /tmp/multistrap-configs/
 
 # Foreign arch:  Build "sysroot"
 # - Select and unpack build dependency packages
@@ -54,10 +55,6 @@ RUN test -z "$SYS_ROOT" \
         done; \
     }
 
-# - Link `xeno-config` to where autoconf can find it
-RUN test -z "$SYS_ROOT" -o $DISTRO_VER -gt 8 || \
-    ln -s /sysroot/usr/bin/xeno-config /usr/bin/
-
 # Monkey-patch entire /usr/include, and re-add build-arch headers
 RUN test -z "$SYS_ROOT" \
     || { \
@@ -65,11 +62,3 @@ RUN test -z "$SYS_ROOT" \
         ln -s $SYS_ROOT/usr/include /usr/include && \
 	ln -sf /usr/include.build/x86_64-linux-gnu $SYS_ROOT/usr/include; \
     }
-
-# On Buster, the libczmq.pc file requires libsystemd but the
-# libczmq-dev package doesn't require libsystemd-dev; take care of
-# native case (sysroot case taken care of in multistrap config)
-RUN if test $DISTRO_VER -eq 10 -a -z "$SYS_ROOT"; then \
-        apt-get install -y libsystemd-dev \
-        && apt-get clean; \
-    fi

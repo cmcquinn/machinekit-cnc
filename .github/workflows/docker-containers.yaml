@@ -28,6 +28,7 @@ jobs:
 
     - name: Get machinekit-hal packages
       run: python scripts/get-mkhal-packages.py -i ${{ env.GITHUB_ID }} -t ${{ matrix.image_tag }} -o ${{ env.PACKAGE_DIR }}
+      working-directory: mkcnc
 
     - name: Build Docker images
       run: scripts/build_debian_docker_image -p ../${{ env.PACKAGE_DIR }} -i ${{ env.DOCKER_ID}} -r ${{ env.IMAGE_NAME }} -t ${{ matrix.image_tag }}

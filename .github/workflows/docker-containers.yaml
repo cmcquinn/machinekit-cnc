@@ -26,6 +26,11 @@ jobs:
       with:
           path: mkcnc
 
+    - name: Setup GIT token
+      uses: fregante/setup-git-token@v1
+      with:
+          token: ${{ secrets.GH_TOKEN }}
+
     - name: Get machinekit-hal packages
       run: python scripts/get-mkhal-packages.py -i ${{ env.GITHUB_ID }} -t ${{ matrix.image_tag }} -o ${{ env.PACKAGE_DIR }}
       working-directory: mkcnc
@@ -39,4 +44,3 @@ jobs:
 
     - name: Push images to Docker Hub
       run: docker push ${{ env.DOCKER_ID }}/${{ env.IMAGE_NAME }}:${{ matrix.image_tag }}
-        

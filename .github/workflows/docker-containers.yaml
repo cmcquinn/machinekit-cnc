@@ -14,6 +14,7 @@ jobs:
     env:
       DOCKER_ID: 'cmcquinn'
       GITHUB_ID: 'cmcquinn'
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       IMAGE_NAME: 'mk-cnc-cross-builder'
       PACKAGE_DIR: 'mkhal'
     strategy:
@@ -25,11 +26,6 @@ jobs:
       uses: actions/checkout@v2
       with:
           path: mkcnc
-
-    - name: Setup GIT token
-      uses: fregante/setup-git-token@v1
-      with:
-          token: ${{ secrets.GH_TOKEN }}
 
     - name: Get machinekit-hal packages
       run: python scripts/get-mkhal-packages.py -i ${{ env.GITHUB_ID }} -t ${{ matrix.image_tag }} -o ${{ env.PACKAGE_DIR }}

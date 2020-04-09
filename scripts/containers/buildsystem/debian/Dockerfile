@@ -35,9 +35,30 @@ RUN if test $DISTRO_VER -le 9 -a $DEBIAN_ARCH = amd64; then \
 	&& apt-get update; \
     fi
 
+###########################################
+# Multistrap setup
+
 # Add multistrap configurations
 RUN rm -rf /tmp/multistrap-configs
 ADD scripts/buildsystem/debian/multistrap-configs /tmp/multistrap-configs/
+
+##############################
+# Machinekit:  Host arch build environment
+
+# Native arch:  Install build dependencies
+RUN if test -z "$SYS_ROOT"; then \
+        apt-get update \
+        && if test $DISTRO_VER -le 9; then \
+	    apt-get install -y  -o Apt::Get::AllowUnauthenticated=true \
+		machinekit-cnc-build-deps \
+	    && sed -i /etc/apt/sources.list.d/local.list -e '/^deb/ s/^/#/' \
+	    && apt-get update ; \
+        else \
+	    apt-get install -y /tmp/debs/machinekit-cnc-build-deps_*.deb; \
+	fi \
+	&& apt-get clean; \
+    fi
+
 
 # Foreign arch:  Build "sysroot"
 # - Select and unpack build dependency packages

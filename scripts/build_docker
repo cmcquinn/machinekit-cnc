@@ -16,11 +16,12 @@ JOBS=${JOBS:-$(nproc)}
 BUILD_SOURCE=${BUILD_SOURCE:-true}  # update Changelog & source pkg
 
 # CL arguments
-while getopts c:i:t:j:nh? opt; do
+while getopts c:i:t:f:j:nh? opt; do
     case "$opt" in
 	c) CMD=$OPTARG ;;
 	i) IMAGE=$OPTARG ;;
 	t) TAG=$OPTARG ;;
+	f) FLAVOR=$OPTARG ;;
 	j) JOBS=$OPTARG ;;
 	n) BUILD_SOURCE=false ;;
 	?|h|*) echo "Usage:  $0 [ -i DOCKER-IMAGE ] [ -t DOCKER-TAG ]" \
@@ -88,6 +89,14 @@ export TAG
 ###########################################################
 # Generate command line
 
+# Generate thread flag to pass to debian/configure
+case $FLAVOR in
+	posix) THREAD_FLAG="-p" ;;
+	rt-preempt) THREAD_FLAG="-r" ;;
+	xenomai) THREAD_FLAG="-x" ;;
+	*)   echo "Unkown thread flavor '$FLAVOR'" >&2; exit 1 ;;
+esac
+
 declare -a BUILD_CL DOCKER_EXTRA_OPTS
 case $CMD in
     "shell"|"") # Interactive shell (default)
@@ -117,7 +126,7 @@ case $CMD in
 
 	BUILD_CL=( bash -xec "
             # configure source package
-            debian/configure;
+            debian/configure ${THREAD_FLAG};
 
             # update Changelog and build source package
             $SCRIPT_DIR/build_source_package $BUILD_SOURCE

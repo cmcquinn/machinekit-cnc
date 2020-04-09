@@ -36,6 +36,7 @@ jobs:
       matrix:
         # Jessie does not have a ARM64 build
         image_tag: [amd64_8, amd64_9, amd64_10, arm64_9, arm64_10, armhf_8, armhf_9, armhf_10, i386_9, i386_10]
+        thread_flavor: [posix, rt-preempt, xenomai]
       fail-fast: false
 
     steps:
@@ -46,7 +47,7 @@ jobs:
         path: to_build/mkcnc
 
     - name: Build Machinekit-CNC .deb package
-      run: scripts/build_docker -i ${{ env.IMAGE }} -t ${{ matrix.image_tag }} -c deb
+      run: scripts/build_docker -i ${{ env.IMAGE }} -t ${{ matrix.image_tag }} -f ${{ matrix.thread_flavor }} -c deb
       working-directory: ./to_build/mkcnc
 
     - name: Print built files

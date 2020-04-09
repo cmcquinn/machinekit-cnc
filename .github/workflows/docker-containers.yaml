@@ -19,7 +19,7 @@ jobs:
       PACKAGE_DIR: 'mkhal'
     strategy:
       matrix:
-        image_tag: [amd64_8, amd64_9, amd64_10, arm64_9, arm64_10, armhf_8, armhf_9, armhf_10, i386_8, i386_9, i386_10]
+        image_tag: [amd64_8, amd64_9, amd64_10, arm64_9, arm64_10, armhf_8, armhf_9, armhf_10, i386_9, i386_10]
       fail-fast: false
 
     steps:

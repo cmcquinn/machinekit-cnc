@@ -49,16 +49,24 @@ ADD scripts/buildsystem/debian/multistrap-configs /tmp/multistrap-configs/
 RUN if test -z "$SYS_ROOT"; then \
         apt-get update \
         && if test $DISTRO_VER -le 9; then \
-	    apt-get install -y  -o Apt::Get::AllowUnauthenticated=true \
-		machinekit-cnc-build-deps \
-	    && sed -i /etc/apt/sources.list.d/local.list -e '/^deb/ s/^/#/' \
-	    && apt-get update ; \
-        else \
-	    apt-get install -y /tmp/debs/machinekit-cnc-build-deps_*.deb; \
-	fi \
-	&& apt-get clean; \
+            apt-get install -y  -o Apt::Get::AllowUnauthenticated=true \
+            machinekit-cnc-build-deps \
+            && sed -i /etc/apt/sources.list.d/local.list -e '/^deb/ s/^/#/' \
+            && apt-get update ; \
+            else \
+            apt-get install -y /tmp/debs/machinekit-cnc-build-deps_*.deb; \
+    	fi \
     fi
 
+# Remove machinekit-hal-xenomai for distros other than Jessie
+RUN test $DISTRO_VER -ne 8 && rm /tmp/debs/machinekit-hal-xenomai*
+
+# Native arch: install machinekit-hal packages
+# FIXME: machinekit-hal-dev and machinekit-hal both provide /usr/bin/comp
+RUN if test -z "$SYS_ROOT"; then \
+        apt-get install -o Dpkg::Options::="--force-overwrite" -y /tmp/debs/machinekit-hal*.deb \
+        && apt-get clean; \
+    fi
 
 # Foreign arch:  Build "sysroot"
 # - Select and unpack build dependency packages

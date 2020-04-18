@@ -35,29 +35,39 @@ def getMkHalPackages(githubID, tag, outputPath):
     artifacts = artifact_list
 
     # match tag and print out artifact list
-    url = None
+    names = []
+    urls = []
     print('Artifacts list retreived from API:')
     for artifact in artifacts:
         print(artifact)
-        if artifact['name'].find(tag) is not -1:
-            name = artifact['name']
-            url = artifact.get('archive_download_url')
+        if tag == '*':
+            names.append(artifact['name'])
+            urls.append(artifact['archive_download_url'])
+        elif artifact['name'].find(tag) is not -1:
+            names.append(artifact['name'])
+            urls.append(artifact.get('archive_download_url'))
 
-    if url is None:
-        printErr('Unable to find an artifact with the tag ' + tag)
+    if not urls:
+        if tag == '*':
+            print('No artifacts found')
+        else:
+            printErr('Unable to find an artifact with the tag ' + tag)
         sys.exit(1)
 
     # get zip archive and extract files
-    print('Downloading {} from {}'.format(name, url))
-    try:
-        archive = io.BytesIO(subprocess.check_output(
-            'hub api -X GET {}'.format(url).split()))
-        with zipfile.ZipFile(archive) as ziparchive:
-            print('Extracting Debian packages to ' + outputPath)
-            ziparchive.extractall(path=outputPath)
-    except subprocess.CalledProcessError as error:
-        printErr(error.output)
-        sys.exit(1)
+    for name, url in zip(names, urls):
+        print('Downloading {} from {}'.format(name, url))
+        try:
+            archive = io.BytesIO(subprocess.check_output(
+                'hub api -X GET {}'.format(url).split()))
+            with zipfile.ZipFile(archive) as ziparchive:
+                print('Extracting Debian packages to ' + outputPath)
+                for file in ziparchive.filelist:
+                    print(file.filename)
+                ziparchive.extractall(path=outputPath)
+        except subprocess.CalledProcessError as error:
+            printErr(error.output)
+            sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -67,7 +77,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', metavar='githubID', type=str,
                         help='GitHub user ID for the owner of the machinekit-hal repository to get packages from', dest='githubID', required=True, nargs='?')
     parser.add_argument('-t', metavar='tag', type=str,
-                        help='Tag containing Debian version and arch to get packages for', dest='tag', required=True, nargs='?')
+                        help='Tag containing Debian version and arch to get packages for', dest='tag', nargs='?', default='*')
     parser.add_argument('-o', metavar='outputPath', type=str,
                         help='Directory to put the zipfile containing packages into', dest='outputPath', required=True, nargs='?')
     parser.add_argument('-w', metavar='workflow', type=str,

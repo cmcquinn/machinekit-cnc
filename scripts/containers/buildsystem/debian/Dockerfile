@@ -26,8 +26,15 @@ RUN if test $DISTRO_VER -eq 8; then \
 	    /tmp/debian/control; \
     fi \
     && mv *.deb /tmp/debs \
-    && cp /tmp/mk-hal/* /tmp/debs \
-    && ( cd /tmp/debs && dpkg-scanpackages -m . > /tmp/debs/Packages )
+    && cp /tmp/mk-hal/* /tmp/debs
+
+# Remove machinekit-hal-xenomai for distros other than Jessie
+RUN if test $DISTRO_VER -gt 8; then \
+        rm /tmp/debs/machinekit-hal-xenomai*; \
+    fi
+
+# Generage Packages file for local repo
+RUN ( cd /tmp/debs && dpkg-scanpackages -m . > /tmp/debs/Packages )
 
 # Add deps repo to apt sources for native builds
 RUN if test $DISTRO_VER -le 9 -a $DEBIAN_ARCH = amd64; then \
@@ -44,11 +51,6 @@ ADD scripts/buildsystem/debian/multistrap-configs /tmp/multistrap-configs/
 
 ##############################
 # Machinekit:  Host arch build environment
-
-# Remove machinekit-hal-xenomai for distros other than Jessie
-RUN if test $DISTRO_VER -gt 8; then \
-        rm /tmp/debs/machinekit-hal-xenomai*; \
-    fi
 
 # Native arch:  Install build dependencies
 RUN if test -z "$SYS_ROOT"; then \

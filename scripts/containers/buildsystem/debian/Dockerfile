@@ -298,7 +298,7 @@ RUN if test -z "$SYS_ROOT"; then \
             && sed -i /etc/apt/sources.list.d/local.list -e '/^deb/ s/^/#/' \
             && apt-get update ; \
             else \
-	        apt-get install -y /tmp/debs/machinekit-cnc-build-deps_*.deb; \
+	        apt-get install -y /tmp/debs/machinekit-cnc-build-deps_*.deb /tmp/debs/machinekit-hal*.deb; \
 	fi \
 	&& apt-get clean; \
     fi

@@ -70,18 +70,22 @@ esac
 case "${CACHE_TAG}" in
     *_8)
         DISTRO_CODENAME="jessie"
+        BASE_IMAGE="debian:jessie"
         DISTRO_VER="8"
         ;;
     *_9)
         DISTRO_CODENAME="stretch"
+        BASE_IMAGE="debian:stretch"
         DISTRO_VER="9"
         ;;
     *_10)
         DISTRO_CODENAME="buster"
+        BASE_IMAGE="debian:buster"
         DISTRO_VER="10"
         ;;
     *_11)
         DISTRO_CODENAME="bullseye"
+        BASE_IMAGE="debian:bullseye"
         DISTRO_VER="11"
         ;;
     *)
@@ -89,9 +93,6 @@ case "${CACHE_TAG}" in
         exit 1
         ;;
 esac
-
-# Set base image
-BASE_IMAGE="$REPO_NAME/mk-hal-cross-builder:$CACHE_TAG"
 
 # Error out if user wants to build forbidden combiantion
 if ([ "$DISTRO_CODENAME" == "jessie" ] && [ "$DEBIAN_ARCH" == "arm64" ]); then
@@ -112,6 +113,9 @@ IMAGE_NAME="$REPO_NAME/$IMAGE_NAME:$CACHE_TAG"
     echo "    DISTRO_CODENAME=${DISTRO_CODENAME}"
     echo "    BASE_IMAGE=${BASE_IMAGE}"
     echo "    DISTRO_VER=${DISTRO_VER}"
+    echo "    EXTRA_FLAGS=${EXTRA_FLAGS}"
+    echo "    LDEMULATION=${LDEMULATION}"
+    echo "    MK_HAL_REPO=${MK_HAL_REPO}"
 ) >&2
 
 # Be sure we're in the right directory
@@ -120,7 +124,14 @@ cd "$(dirname $0)"
 # Build the image
 set -x
 exec docker build \
+       --build-arg DEBIAN_ARCH=${DEBIAN_ARCH} \
+       --build-arg SYS_ROOT=${SYS_ROOT} \
+       --build-arg HOST_MULTIARCH=${HOST_MULTIARCH} \
+       --build-arg DISTRO_CODENAME=${DISTRO_CODENAME} \
        --build-arg BASE_IMAGE=${BASE_IMAGE} \
        --build-arg MK_HAL_REPO=${MK_HAL_REPO} \
+       --build-arg DISTRO_VER=${DISTRO_VER} \
+       --build-arg EXTRA_FLAGS=${EXTRA_FLAGS} \
+       --build-arg LDEMULATION=${LDEMULATION} \
        ${DOCKER_BUILD_ARGS} \
        -f $DOCKERFILE_PATH -t $IMAGE_NAME ..

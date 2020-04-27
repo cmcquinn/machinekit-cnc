@@ -318,7 +318,23 @@ RUN test -z "$SYS_ROOT" \
 	-a $DEBIAN_ARCH -d $SYS_ROOT
 
 # Configure packages and install mk-hal
-RUN proot -S $SYS_ROOT -q qemu-arm-static /tmp/multistrap-configs/setupscript.sh
+RUN test -z "$SYS_ROOT" || \
+    case "${DEBIAN_ARCH}" in \
+        armhf) \
+            QEMU_BIN="qemu-arm-static" \
+            ;; \
+        arm64) \
+            QEMU_BIN="qemu-aarch-static" \
+            ;; \
+        i386) \
+            QEMU_BIN="qemu-i386-static" \
+            ;; \
+        *) \
+            echo "Unknown arch ${DEBIAN_ARCH}" >&2 \
+            exit 1 \
+            ;; \
+    esac \
+    proot -S $SYS_ROOT -q $QEMU_BIN /tmp/multistrap-configs/setupscript.sh
 
 # - Fix symlinks in "sysroot" libdir pointing to `/lib/$MULTIARCH`
 RUN test -z "$SYS_ROOT" \

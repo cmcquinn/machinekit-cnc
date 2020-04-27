@@ -83,6 +83,7 @@ RUN apt-get -y install \
 	apt-transport-https \
 	ca-certificates \
 	multistrap \
+    proot \
 	debian-keyring \
 	debian-archive-keyring \
 	python-apt \
@@ -315,6 +316,10 @@ RUN if test $DISTRO_VER -ge 9; then \
 RUN test -z "$SYS_ROOT" \
     || multistrap -f /tmp/multistrap-configs/$DISTRO_CODENAME.conf \
 	-a $DEBIAN_ARCH -d $SYS_ROOT
+
+# Configure packages and install mk-hal
+RUN proot -S $SYS_ROOT -q qemu-arm-static /tmp/multistrap-configs/setupscript.sh
+
 # - Fix symlinks in "sysroot" libdir pointing to `/lib/$MULTIARCH`
 RUN test -z "$SYS_ROOT" \
     || { \
